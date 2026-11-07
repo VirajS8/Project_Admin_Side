@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shows — MOCTALE Admin</title>
+  <link rel="stylesheet" href="admin-style.css" />
+</head>
+<body>
+
+    <!-- ADMIN NAVBAR -->
+  <nav class="admin-navbar">
+    <a href="admin-home.html" class="admin-nav-brand">
+      <img src="unnamed.webp" alt="MOCTALE">
+      MOCTALE
+    </a>
+    <div class="admin-nav-links">
+      <a href="admin-home.html">Home</a>
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="admin-movies.html">Movies</a>
+      <a href="admin-theaters.html">Theaters</a>
+      <a href="admin-shows.html" class="active">Shows</a>
+      <a href="admin-bookings.html">Bookings</a>
+    </div>
+    <div class="admin-nav-actions">
+      <div class="admin-avatar-wrap">
+        <div class="admin-avatar-btn" onclick="toggleAdminMenu()">A</div>
+        <div class="admin-dropdown" id="admin-dropdown">
+          <div class="admin-dropdown-label">Admin</div>
+          <div class="admin-dropdown-divider"></div>
+          <button class="admin-dropdown-item" onclick="adminLogout()">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-main">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Shows</h1>
+          <p>Schedule and manage all show timings across theaters.</p>
+        </div>
+      </div>
+
+
+      <!-- ADD FORM -->
+      <div class="add-form-panel" id="addForm">
+        <h3>Add New Show</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Movie *</label>
+            <select class="form-control" id="f_movie">
+              <option value="">Select Movie</option>
+              <option>Inception</option>
+              <option>Interstellar</option>
+              <option>Arrival</option>
+              <option>Oppenheimer</option>
+              <option>Spider-Man: No Way Home</option>
+              <option>Michael Jackson</option>
+              <option>Alien: Romulus</option>
+              <option>Top Gun: Maverick</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Theater *</label>
+            <select class="form-control" id="f_theater">
+              <option value="">Select Theater</option>
+              <option>PVR Cinemas</option>
+              <option>INOX Megaplex</option>
+              <option>Cinépolis</option>
+              <option>Carnival Cinemas</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Date *</label>
+            <input class="form-control" id="f_date" type="date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Time *</label>
+            <input class="form-control" id="f_time" type="time" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Format</label>
+            <select class="form-control" id="f_format">
+              <option>2D</option>
+              <option>3D</option>
+              <option>IMAX</option>
+              <option>4DX</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Available Seats</label>
+          <input class="form-control" id="f_seats" type="number" placeholder="e.g. 150" min="1" />
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="addShow()">Add Show</button>
+          <button class="btn btn-ghost" onclick="toggleForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div class="card">
+        <div class="card-header">
+          <h2>All Shows <span id="showCount" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></h2>
+          <button class="btn btn-primary" onclick="toggleForm()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Show
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Movie</th>
+                <th>Theater</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Seats</th>
+                <th>Format</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="showsBody"></tbody>
+          </table>
+        </div>
+      </div>
+  </div>
+
+  <div class="toast-wrap" id="toast-wrap"><span class="toast-dot" id="toastDot"></span><span id="toastMsg"></span>  </div>
+
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script>
+    if (!localStorage.getItem('adminLoggedIn')) window.location.href = 'admin-login.html';
+
+    function toggleAdminMenu() {
+      document.getElementById('admin-dropdown').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      const wrap = document.querySelector('.admin-avatar-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        const dd = document.getElementById('admin-dropdown');
+        if (dd) dd.classList.remove('open');
+      }
+    });
+    function adminLogout() {
+      localStorage.removeItem('adminLoggedIn');
+      window.location.href = 'admin-login.html';
+    }
+
+    const DEFAULT_SHOWS = [
+      { id: 1,  movie: 'Inception',              theater: 'PVR Cinemas',      date: '2025-02-10', time: '10:00', seats: 150, format: 'IMAX' },
+      { id: 2,  movie: 'Inception',              theater: 'INOX Megaplex',    date: '2025-02-10', time: '14:00', seats: 120, format: '2D'   },
+      { id: 3,  movie: 'Interstellar',           theater: 'Cinépolis',         date: '2025-02-11', time: '11:00', seats: 100, format: 'IMAX' },
+      { id: 4,  movie: 'Interstellar',           theater: 'PVR Cinemas',      date: '2025-02-11', time: '17:30', seats: 130, format: '3D'   },
+      { id: 5,  movie: 'Arrival',                theater: 'Carnival Cinemas', date: '2025-02-12', time: '12:30', seats: 90,  format: '2D'   },
+      { id: 6,  movie: 'Oppenheimer',            theater: 'PVR Cinemas',      date: '2025-02-12', time: '15:00', seats: 160, format: 'IMAX' },
+      { id: 7,  movie: 'Spider-Man: No Way Home',theater: 'INOX Megaplex',    date: '2025-02-13', time: '13:00', seats: 140, format: '3D'   },
+      { id: 8,  movie: 'Michael Jackson',        theater: 'Cinépolis',         date: '2025-02-13', time: '18:00', seats: 110, format: '2D'   },
+      { id: 9,  movie: 'Alien: Romulus',         theater: 'Carnival Cinemas', date: '2025-02-14', time: '20:30', seats: 85,  format: '4DX'  },
+      { id: 10, movie: 'Top Gun: Maverick',      theater: 'PVR Cinemas',      date: '2025-02-14', time: '16:00', seats: 170, format: 'IMAX' },
+    ];
+
+    function getShows() {
+      try {
+        const stored = localStorage.getItem('admin_shows');
+        return stored ? JSON.parse(stored) : DEFAULT_SHOWS;
+      } catch(e) { return DEFAULT_SHOWS; }
+    }
+
+    function saveShows(data) {
+      localStorage.setItem('admin_shows', JSON.stringify(data));
+    }
+
+    function formatBadge(fmt) {
+      const colors = { IMAX: 'badge-info', '3D': 'badge-warning', '4DX': 'badge-success', '2D': 'badge-warning' };
+      return `<span class="badge ${colors[fmt] || 'badge-warning'}">${fmt}</span>`;
+    }
+
+    function renderShows() {
+      const shows = getShows();
+      const tbody = document.getElementById('showsBody');
+      document.getElementById('showCount').textContent = '(' + shows.length + ')';
+
+      if (shows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state" style="padding:40px"><p>No shows scheduled.</p></div></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = shows.map((s, i) => `
+        <tr>
+          <td style="color:var(--text-muted)">${i + 1}</td>
+          <td><strong>${s.movie}</strong></td>
+          <td>${s.theater}</td>
+          <td>${s.date}</td>
+          <td>${s.time}</td>
+          <td><span style="color:var(--success);font-weight:600">${s.seats}</span></td>
+          <td>${formatBadge(s.format)}</td>
+          <td>
+            <button class="btn btn-danger" onclick="deleteShow(${s.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Delete
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function deleteShow(id) {
+      if (!confirm('Delete this show?')) return;
+      saveShows(getShows().filter(s => s.id !== id));
+      renderShows();
+      showToast('Show deleted.', true);
+    }
+
+    function toggleForm() {
+      document.getElementById('addForm').classList.toggle('open');
+    }
+
+    function addShow() {
+      const movie   = document.getElementById('f_movie').value;
+      const theater = document.getElementById('f_theater').value;
+      const date    = document.getElementById('f_date').value;
+      const time    = document.getElementById('f_time').value;
+      const seats   = document.getElementById('f_seats').value;
+      const format  = document.getElementById('f_format').value;
+
+      if (!movie || !theater || !date || !time) { alert('Movie, Theater, Date and Time are required.'); return; }
+
+      const shows = getShows();
+      const newId = shows.length ? Math.max(...shows.map(s => s.id)) + 1 : 1;
+      shows.push({ id: newId, movie, theater, date, time, seats: seats || 'N/A', format });
+      saveShows(shows);
+      renderShows();
+
+      ['f_movie','f_theater','f_date','f_time','f_seats'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+      });
+      document.getElementById('addForm').classList.remove('open');
+      showToast('Show added!');
+    }
+
+    function showToast(msg, isDanger) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastDot').className = 'toast-dot' + (isDanger ? ' danger' : '');
+      document.getElementById('toastMsg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    renderShows();
+  </script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Theaters — MOCTALE Admin</title>
+  <link rel="stylesheet" href="admin-style.css" />
+</head>
+<body>
+
+  <!-- ADMIN NAVBAR -->
+  <nav class="admin-navbar">
+    <a href="admin-home.html" class="admin-nav-brand">
+      <img src="unnamed.webp" alt="MOCTALE">
+      MOCTALE
+    </a>
+    <div class="admin-nav-links">
+      <a href="admin-home.html">Home</a>
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="admin-movies.html">Movies</a>
+      <a href="admin-theaters.html" class="active">Theaters</a>
+      <a href="admin-shows.html">Shows</a>
+      <a href="admin-bookings.html">Bookings</a>
+    </div>
+    <div class="admin-nav-actions">
+      <div class="admin-avatar-wrap">
+        <div class="admin-avatar-btn" onclick="toggleAdminMenu()">A</div>
+        <div class="admin-dropdown" id="admin-dropdown">
+          <div class="admin-dropdown-label">Admin</div>
+          <div class="admin-dropdown-divider"></div>
+          <button class="admin-dropdown-item" onclick="adminLogout()">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-main">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Theaters</h1>
+          <p>Manage cinema locations and venue details.</p>
+        </div>
+      </div>
+
+      <!-- ADD FORM -->
+      <div class="add-form-panel" id="addForm">
+        <h3>Add New Theater</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Theater Name *</label>
+            <input class="form-control" id="f_name" placeholder="e.g. PVR Cinemas" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location / Mall *</label>
+            <input class="form-control" id="f_location" placeholder="e.g. Phoenix Palladium" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Number of Screens</label>
+            <input class="form-control" id="f_screens" placeholder="e.g. 8" type="number" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seating Capacity</label>
+            <input class="form-control" id="f_capacity" placeholder="e.g. 1200" type="number" min="1" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="addTheater()">Add Theater</button>
+          <button class="btn btn-ghost" onclick="toggleForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div class="card">
+        <div class="card-header">
+          <h2>All Theaters <span id="theaterCount" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></h2>
+          <button class="btn btn-primary" onclick="toggleForm()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Theater
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Theater Name</th>
+                <th>Location / Mall</th>
+                <th>Screens</th>
+                <th>Capacity</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="theatersBody"></tbody>
+          </table>
+        </div>
+      </div>
+  </div>
+
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script>
+    if (!localStorage.getItem('adminLoggedIn')) window.location.href = 'admin-login.html';
+
+    function toggleAdminMenu() {
+      document.getElementById('admin-dropdown').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      const wrap = document.querySelector('.admin-avatar-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        const dd = document.getElementById('admin-dropdown');
+        if (dd) dd.classList.remove('open');
+      }
+    });
+    function adminLogout() {
+      localStorage.removeItem('adminLoggedIn');
+      window.location.href = 'admin-login.html';
+    }
+
+    const DEFAULT_THEATERS = [
+      { id: 1, name: 'PVR Cinemas',        location: 'Phoenix Palladium',  screens: 10, capacity: 1500 },
+      { id: 2, name: 'INOX Megaplex',      location: 'R-City Mall',        screens: 8,  capacity: 1200 },
+      { id: 3, name: 'Cinépolis',           location: 'Viviana Mall',       screens: 7,  capacity: 1050 },
+      { id: 4, name: 'Carnival Cinemas',   location: 'Infiniti Mall',      screens: 6,  capacity: 900  },
+    ];
+
+    function getTheaters() {
+      try {
+        const stored = localStorage.getItem('admin_theaters');
+        return stored ? JSON.parse(stored) : DEFAULT_THEATERS;
+      } catch(e) { return DEFAULT_THEATERS; }
+    }
+
+    function saveTheaters(data) {
+      localStorage.setItem('admin_theaters', JSON.stringify(data));
+    }
+
+    function renderTheaters() {
+      const theaters = getTheaters();
+      const tbody = document.getElementById('theatersBody');
+      document.getElementById('theaterCount').textContent = '(' + theaters.length + ')';
+
+      if (theaters.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state" style="padding:40px"><p>No theaters found.</p></div></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = theaters.map((t, i) => `
+        <tr>
+          <td style="color:var(--text-muted)">${i + 1}</td>
+          <td><strong>${t.name}</strong></td>
+          <td>
+            <span style="display:flex;align-items:center;gap:6px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${t.location}
+            </span>
+          </td>
+          <td>${t.screens}</td>
+          <td>${Number(t.capacity).toLocaleString()}</td>
+          <td>
+            <button class="btn btn-danger" onclick="deleteTheater(${t.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Delete
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function deleteTheater(id) {
+      if (!confirm('Delete this theater?')) return;
+      saveTheaters(getTheaters().filter(t => t.id !== id));
+      renderTheaters();
+      showToast('Theater deleted.', true);
+    }
+
+    function toggleForm() {
+      document.getElementById('addForm').classList.toggle('open');
+    }
+
+    function addTheater() {
+      const name     = document.getElementById('f_name').value.trim();
+      const location = document.getElementById('f_location').value.trim();
+      const screens  = document.getElementById('f_screens').value.trim();
+      const capacity = document.getElementById('f_capacity').value.trim();
+
+      if (!name || !location) { alert('Name and Location are required.'); return; }
+
+      const theaters = getTheaters();
+      const newId = theaters.length ? Math.max(...theaters.map(t => t.id)) + 1 : 1;
+      theaters.push({ id: newId, name, location, screens: screens || 'N/A', capacity: capacity || 'N/A' });
+      saveTheaters(theaters);
+      renderTheaters();
+
+      ['f_name','f_location','f_screens','f_capacity'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('addForm').classList.remove('open');
+      showToast('Theater added!');
+    }
+
+    function showToast(msg, isDanger) {
+      const wrap = document.getElementById('toast-wrap');
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      wrap.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    renderTheaters();
+  </script>
+</body>
+</html>

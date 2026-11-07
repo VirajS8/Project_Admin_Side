@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — MOCTALE Admin</title>
+  <link rel="stylesheet" href="admin-style.css" />
+</head>
+<body>
+
+  <!-- ADMIN NAVBAR -->
+  <nav class="admin-navbar">
+    <a href="admin-home.html" class="admin-nav-brand">
+      <img src="unnamed.webp" alt="MOCTALE">
+      MOCTALE
+    </a>
+    <div class="admin-nav-links">
+      <a href="admin-home.html">Home</a>
+      <a href="admin-dashboard.html" class="active">Dashboard</a>
+      <a href="admin-movies.html">Movies</a>
+      <a href="admin-theaters.html">Theaters</a>
+      <a href="admin-shows.html">Shows</a>
+      <a href="admin-bookings.html">Bookings</a>
+    </div>
+    <div class="admin-nav-actions">
+      <div class="admin-avatar-wrap">
+        <div class="admin-avatar-btn" onclick="toggleAdminMenu()">A</div>
+        <div class="admin-dropdown" id="admin-dropdown">
+          <div class="admin-dropdown-label">Admin</div>
+          <div class="admin-dropdown-divider"></div>
+          <button class="admin-dropdown-item" onclick="adminLogout()">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-main">
+    <div class="welcome-banner">
+      <div>
+        <h2>Welcome, <span>Admin</span> 👋</h2>
+        <p>Here's what's happening with MOCTALE today.</p>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3V9z"/></svg>
+        </div>
+        <div class="stat-number">8</div>
+        <div class="stat-label">Total Movies</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="stat-number">4</div>
+        <div class="stat-label">Total Theaters</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="stat-number">24</div>
+        <div class="stat-label">Total Shows</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="stat-number" id="totalBookings">0</div>
+        <div class="stat-label">Total Bookings</div>
+      </div>
+    </div>
+
+    <!-- RECENT BOOKINGS TABLE -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Bookings</h2>
+        <a href="admin-bookings.html" class="btn btn-sm btn-ghost">View All</a>
+      </div>
+      <div class="table-wrap">
+        <table id="recentTable">
+          <thead>
+            <tr>
+              <th>Booking ID</th>
+              <th>Movie</th>
+              <th>Theater</th>
+              <th>Date</th>
+              <th>Seats</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="recentBody">
+            <tr>
+              <td colspan="7">
+                <div class="empty-state" style="padding:30px 20px">
+                  <p>No bookings yet.</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('adminLoggedIn')) window.location.href = 'admin-login.html';
+
+    function toggleAdminMenu() {
+      document.getElementById('admin-dropdown').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      const wrap = document.querySelector('.admin-avatar-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        const dd = document.getElementById('admin-dropdown');
+        if (dd) dd.classList.remove('open');
+      }
+    });
+    function adminLogout() {
+      localStorage.removeItem('adminLoggedIn');
+      window.location.href = 'admin-login.html';
+    }
+
+    function getStatusBadge(status) {
+      const s = (status || 'upcoming').toLowerCase();
+      if (s === 'upcoming') return '<span class="badge badge-success">Upcoming</span>';
+      if (s === 'completed') return '<span class="badge badge-info">Completed</span>';
+      if (s === 'cancelled') return '<span class="badge badge-danger">Cancelled</span>';
+      return '<span class="badge badge-warning">' + s + '</span>';
+    }
+
+    (function loadDashboard() {
+      let bookings = [];
+      try {
+        bookings = JSON.parse(localStorage.getItem('moctale_bookings') || '[]');
+      } catch(e) {}
+
+      document.getElementById('totalBookings').textContent = bookings.length;
+
+      const tbody = document.getElementById('recentBody');
+      const recent = bookings.slice(-5).reverse();
+
+      if (recent.length === 0) return;
+
+      tbody.innerHTML = recent.map(b => `
+        <tr>
+          <td><code style="font-size:12px;color:var(--text-muted)">${b.id || b.bookingId || '—'}</code></td>
+          <td>${b.movie || b.movieName || '—'}</td>
+          <td>${b.theater || b.theaterName || '—'}</td>
+          <td>${b.date || '—'}</td>
+          <td>${Array.isArray(b.seats) ? b.seats.join(', ') : (b.seats || '—')}</td>
+          <td>₹${b.amount || b.totalAmount || '—'}</td>
+          <td>${getStatusBadge(b.status)}</td>
+        </tr>
+      `).join('');
+    })();
+  </script>
+</body>
+</html>

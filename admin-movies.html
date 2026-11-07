@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movies — MOCTALE Admin</title>
+  <link rel="stylesheet" href="admin-style.css" />
+</head>
+<body>
+
+  <!-- ADMIN NAVBAR -->
+  <nav class="admin-navbar">
+    <a href="admin-home.html" class="admin-nav-brand">
+      <img src="unnamed.webp" alt="MOCTALE">
+      MOCTALE
+    </a>
+    <div class="admin-nav-links">
+      <a href="admin-home.html">Home</a>
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="admin-movies.html" class="active">Movies</a>
+      <a href="admin-theaters.html">Theaters</a>
+      <a href="admin-shows.html">Shows</a>
+      <a href="admin-bookings.html">Bookings</a>
+    </div>
+    <div class="admin-nav-actions">
+      <div class="admin-avatar-wrap">
+        <div class="admin-avatar-btn" onclick="toggleAdminMenu()">A</div>
+        <div class="admin-dropdown" id="admin-dropdown">
+          <div class="admin-dropdown-label">Admin</div>
+          <div class="admin-dropdown-divider"></div>
+          <button class="admin-dropdown-item" onclick="adminLogout()">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-main">
+    <div class="page-header">
+      <div>
+        <h1>Movies</h1>
+        <p>Manage all movies in the MOCTALE catalogue.</p>
+      </div>
+    </div>
+
+    <!-- ADD FORM -->
+    <div class="add-form-panel" id="addForm">
+      <h3>Add New Movie</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Movie Title *</label>
+          <input class="form-control" id="f_title" placeholder="e.g. The Dark Knight" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Genre *</label>
+          <input class="form-control" id="f_genre" placeholder="e.g. Action, Thriller" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Duration</label>
+          <input class="form-control" id="f_duration" placeholder="e.g. 2h 32m" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rating (IMDb)</label>
+          <input class="form-control" id="f_rating" placeholder="e.g. 9.0" type="number" step="0.1" min="0" max="10" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Poster Image Path</label>
+        <input class="form-control" id="f_poster" placeholder="e.g. 9.jpg" />
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addMovie()">Add Movie</button>
+        <button class="btn btn-ghost" onclick="toggleForm()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="card">
+      <div class="card-header">
+        <h2>All Movies <span id="movieCount" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></h2>
+        <button class="btn btn-primary" onclick="toggleForm()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Movie
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Poster</th>
+              <th>Movie Name</th>
+              <th>Genre</th>
+              <th>Duration</th>
+              <th>Rating</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="moviesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('adminLoggedIn')) window.location.href = 'admin-login.html';
+
+    function toggleAdminMenu() {
+      document.getElementById('admin-dropdown').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      const wrap = document.querySelector('.admin-avatar-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        const dd = document.getElementById('admin-dropdown');
+        if (dd) dd.classList.remove('open');
+      }
+    });
+    function adminLogout() {
+      localStorage.removeItem('adminLoggedIn');
+      window.location.href = 'admin-login.html';
+    }
+
+    const DEFAULT_MOVIES = [
+      { id: 1, title: 'Inception',          genre: 'Sci-Fi, Thriller', duration: '2h 28m', rating: '8.8', poster: '1.jpeg' },
+      { id: 2, title: 'Interstellar',        genre: 'Sci-Fi, Adventure', duration: '2h 49m', rating: '8.7', poster: '2.jpg'  },
+      { id: 3, title: 'Arrival',             genre: 'Sci-Fi, Drama',    duration: '1h 56m', rating: '7.9', poster: '3.jpeg' },
+      { id: 4, title: 'Oppenheimer',         genre: 'Biography, Drama', duration: '3h 0m',  rating: '8.3', poster: '4.webp' },
+      { id: 5, title: 'Spider-Man: No Way Home', genre: 'Action, Adventure', duration: '2h 28m', rating: '8.3', poster: '5.webp' },
+      { id: 6, title: 'Michael Jackson',     genre: 'Biography, Music', duration: '2h 20m', rating: '7.5', poster: '6.webp' },
+      { id: 7, title: 'Alien: Romulus',      genre: 'Sci-Fi, Horror',   duration: '1h 59m', rating: '7.3', poster: '7.webp' },
+      { id: 8, title: 'Top Gun: Maverick',   genre: 'Action, Drama',    duration: '2h 11m', rating: '8.3', poster: '8.webp' },
+    ];
+
+    function getMovies() {
+      try {
+        const stored = localStorage.getItem('admin_movies');
+        return stored ? JSON.parse(stored) : DEFAULT_MOVIES;
+      } catch(e) { return DEFAULT_MOVIES; }
+    }
+
+    function saveMovies(movies) {
+      localStorage.setItem('admin_movies', JSON.stringify(movies));
+    }
+
+    function renderMovies() {
+      const movies = getMovies();
+      const tbody = document.getElementById('moviesBody');
+      document.getElementById('movieCount').textContent = '(' + movies.length + ')';
+
+      if (movies.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state" style="padding:40px"><p>No movies found. Add one above.</p></div></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = movies.map(m => `
+        <tr id="row_${m.id}">
+          <td>
+            <img src="${m.poster}" alt="${m.title}" class="table-poster"
+                 onerror="this.style.background='#1a1f2e';this.style.minWidth='40px'" />
+          </td>
+          <td><strong>${m.title}</strong></td>
+          <td>${m.genre}</td>
+          <td>${m.duration}</td>
+          <td>
+            <span style="color:#f59e0b;font-weight:700">★ ${m.rating}</span>
+          </td>
+          <td>
+            <button class="btn btn-danger" onclick="deleteMovie(${m.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Delete
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function deleteMovie(id) {
+      if (!confirm('Delete this movie?')) return;
+      let movies = getMovies().filter(m => m.id !== id);
+      saveMovies(movies);
+      renderMovies();
+      showToast('Movie deleted.', true);
+    }
+
+    function toggleForm() {
+      const f = document.getElementById('addForm');
+      f.classList.toggle('open');
+    }
+
+    function addMovie() {
+      const title    = document.getElementById('f_title').value.trim();
+      const genre    = document.getElementById('f_genre').value.trim();
+      const duration = document.getElementById('f_duration').value.trim();
+      const rating   = document.getElementById('f_rating').value.trim();
+      const poster   = document.getElementById('f_poster').value.trim();
+
+      if (!title || !genre) { alert('Title and Genre are required.'); return; }
+
+      const movies = getMovies();
+      const newId = movies.length ? Math.max(...movies.map(m => m.id)) + 1 : 1;
+      movies.push({ id: newId, title, genre, duration: duration || 'N/A', rating: rating || 'N/A', poster: poster || '' });
+      saveMovies(movies);
+      renderMovies();
+
+      ['f_title','f_genre','f_duration','f_rating','f_poster'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('addForm').classList.remove('open');
+      showToast('Movie added successfully!');
+    }
+
+    function showToast(msg, isDanger) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:fixed;bottom:28px;right:28px;z-index:999';
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      wrap.appendChild(toast);
+      document.body.appendChild(wrap);
+      setTimeout(() => wrap.remove(), 3000);
+    }
+
+    renderMovies();
+  </script>
+</body>
+</html>
